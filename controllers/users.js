@@ -1,4 +1,9 @@
+require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 const validationErrorCode = 400;
 const notFoundErrorCode = 404;
@@ -10,6 +15,14 @@ module.exports.getUsers = (req, res) => {
     .catch(() => res.status(serverErrorCode).send({ message: 'На сервере произошла ошибка' }));
 };
 
+module.exports.getUser = (req, res) => {
+  User.findOne({ email: req.body.email })
+    .then((user) => (user ? res.send(user) : res.status(notFoundErrorCode).send({ message: 'Пользователь не найден' })))
+    .catch((err) => (err.name === 'CastError'
+      ? res.status(validationErrorCode).send({ message: 'Неправильные почта или пароль' })
+      : res.status(serverErrorCode).send({ message: 'На сервере произошла ошибка' })));
+};
+
 module.exports.getUserById = (req, res) => {
   User.findById(req.params.userId)
     .then((user) => (user ? res.send(user) : res.status(notFoundErrorCode).send({ message: 'Пользователь по указанному id не найден' })))
@@ -19,13 +32,18 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
-  User.create({ name, about, avatar })
-    .then((user) => res.send(user))
-    .catch((err) => (err.name === 'ValidationError'
-      ? res.status(validationErrorCode).send({ message: 'Переданы некорректные данные при создании пользователя' })
-      : res.status(serverErrorCode).send({ message: 'На сервере произошла ошибка' })));
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    })
+      .then((user) => res.send(user))
+      .catch((err) => (err.name === 'ValidationError'
+        ? res.status(validationErrorCode).send({ message: 'Переданы некорректные данные при создании пользователя' })
+        : res.status(serverErrorCode).send({ message: 'На сервере произошла ошибка' }))));
 };
 
 module.exports.updateUserInfo = (req, res) => {
@@ -44,7 +62,7 @@ module.exports.updateUserInfo = (req, res) => {
     .then((user) => (user ? res.send(user) : res.status(notFoundErrorCode).send({ message: 'Пользователь по указанному id не найден' })))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(validationErrorCode).send({ message: 'Переданы некорректные данные при создании пользователя' });
+        res.status(validationErrorCode).send({ message: 'Переданы некорректные данные при обновлении информации о пользователе' });
       }
       if (err.name === 'CastError') {
         res.status(validationErrorCode).send({ message: 'Передан некорректный id' });
@@ -70,12 +88,34 @@ module.exports.updateUserAvatar = (req, res) => {
     .then((user) => (user ? res.send(user) : res.status(notFoundErrorCode).send({ message: 'Пользователь по указанному id не найден' })))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(validationErrorCode).send({ message: 'Переданы некорректные данные при создании пользователя' });
+        res.status(validationErrorCode).send({ message: 'Переданы некорректные данные при обновлении аватара пользователя' });
       }
       if (err.name === 'CastError') {
         res.status(validationErrorCode).send({ message: 'Пользователь по указанному _id не найден' });
       } else {
         res.status(serverErrorCode).send({ message: 'На сервере произошла ошибка' });
       }
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+        { expiresIn: '7d' },
+      );
+      res.set('Set-Cookie', 'jwt=token');
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+      })
+        .end();
+    })
+    .catch((err) => {
+      res.status(401).send({ message: err.message });
     });
 };
