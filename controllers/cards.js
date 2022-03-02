@@ -17,7 +17,7 @@ module.exports.createCard = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         throw new ValidationError('Переданы некорректные данные при создании карточки');
-      }
+      } else next(err);
     })
     .catch(next);
 };
@@ -31,7 +31,7 @@ module.exports.deleteCard = (req, res, next) => {
       if (card.owner._id.toString() !== req.user._id) {
         throw new ForbiddenError('Нельзя удалить карточку другого пользователя');
       }
-      Card.findByIdAndRemove(req.params.cardId).then((deletedCard) => res.send(deletedCard));
+      return Card.findByIdAndRemove(req.params.cardId).then((deletedCard) => res.send(deletedCard));
     })
     .catch((err) => {
       if (err.name === 'CastError') {

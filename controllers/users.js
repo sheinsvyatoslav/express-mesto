@@ -16,7 +16,7 @@ module.exports.getUsers = (req, res, next) => {
 };
 
 module.exports.getUser = (req, res, next) => {
-  User.findOne({ email: req.body.email })
+  User.findOne({ _id: req.user._id })
     .then((user) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
@@ -59,14 +59,16 @@ module.exports.createUser = (req, res, next) => {
         name, about, avatar, email, password: hash,
       },
     )
-      .then((user) => res.send(user))
+      .then((user) => res.status(200).send({
+        name: user.name, about: user.about, avatar: user.avatar, email: user.email, _id: user._id,
+      }))
       .catch((err) => {
         if (err.name === 'ValidationError') {
           throw new ValidationError('Переданы некорректные данные при создании пользователя');
         }
-        if (err.name === 'MongoServerError' && err.code === 11000) {
+        if (err.code === 11000) {
           throw new ConflictError('Пользователь с таким email уже есть');
-        }
+        } else next(err);
       })
       .catch(next));
 };
@@ -90,7 +92,7 @@ module.exports.updateUserInfo = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         throw new ValidationError('Переданы некорректные данные при обновлении информации о пользователе');
-      }
+      } else next(err);
     })
     .catch(next);
 };
@@ -114,7 +116,7 @@ module.exports.updateUserAvatar = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         throw new ValidationError('Переданы некорректные данные при обновлении аватара');
-      }
+      } else next(err);
     })
     .catch(next);
 };

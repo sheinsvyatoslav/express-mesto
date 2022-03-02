@@ -12,7 +12,7 @@ const cardSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator(v) {
-        return /http[s]*:\/\/(www.)*[\S]+\.[a-z]+[\S]*/.test(v);
+        return /http[s]?:\/\/(www.)?[\S]+\.[a-z]+[\S]*/.test(v);
       },
     },
   },
