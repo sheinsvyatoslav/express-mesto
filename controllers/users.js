@@ -49,10 +49,6 @@ module.exports.createUser = (req, res, next) => {
     name, about, avatar, email, password,
   } = req.body;
 
-  if (password.length < 8) {
-    throw new ValidationError('Переданы некорректные данные при создании пользователя');
-  }
-
   bcrypt.hash(password, 10)
     .then((hash) => User.create(
       {
