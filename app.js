@@ -10,6 +10,7 @@ const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const NotFoundError = require('./errors/not-found-error');
 const { vaidateSignup, vaidateSignin } = require('./middlewares/validation');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -17,11 +18,13 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+app.use(requestLogger);
 app.post('/signup', vaidateSignup, createUser);
 app.post('/signin', vaidateSignin, login);
 app.use(auth);
 app.use('/users', routerUser);
 app.use('/cards', routerCards);
+app.use(errorLogger);
 app.use(() => {
   throw new NotFoundError('Страница не найдена');
 });
