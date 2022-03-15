@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
+const cors = require('cors');
 const routerUser = require('./routes/users');
 const routerCards = require('./routes/cards');
 const { login, createUser } = require('./controllers/users');
@@ -24,9 +25,13 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cookieParser());
 
+app.use(cors({
+  origin: ['https://mesto.project.frontend.nomoredomains.work', 'http://mesto.project.frontend.nomoredomains.work'],
+  credentials: true,
+}));
+/*
 app.use((req, res, next) => {
   const { origin } = req.headers;
-  console.log(origin);
   const { method } = req;
   const DEFAULT_ALLOWED_METHODS = 'GET,HEAD,PUT,PATCH,POST,DELETE';
   const requestHeaders = req.headers['access-control-request-headers'];
@@ -42,6 +47,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+*/
 app.use(requestLogger);
 app.get('/crash-test', () => {
   setTimeout(() => {
