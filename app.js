@@ -26,6 +26,7 @@ app.use(cookieParser());
 
 app.use((req, res, next) => {
   const { origin } = req.headers;
+  console.log(origin);
   const { method } = req;
   const DEFAULT_ALLOWED_METHODS = 'GET,HEAD,PUT,PATCH,POST,DELETE';
   const requestHeaders = req.headers['access-control-request-headers'];
