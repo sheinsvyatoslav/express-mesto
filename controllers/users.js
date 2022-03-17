@@ -127,7 +127,7 @@ module.exports.login = (req, res, next) => {
         NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
         { expiresIn: '7d' },
       );
-      res.send({ token }).end();
+      res.send({ jwt: token }).end();
     })
     .catch((err) => {
       throw new UnauthorizedError(err.message);
