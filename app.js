@@ -30,10 +30,10 @@ app.use(auth);
 app.use('/users', routerUser);
 app.use('/cards', routerCards);
 app.use(errorLogger);
+app.use(errors());
 app.use(() => {
   throw new NotFoundError('Страница не найдена');
 });
-app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode, message } = err;
 
